@@ -1,7 +1,7 @@
 /* 
  * CS:APP Data Lab 
  * 
- * <Please put your name and userid here>
+ * <ShawYang>
  * 
  * bits.c - Source file with your solutions to the Lab.
  *          This is the file you will hand in to your instructor.
@@ -145,7 +145,7 @@ NOTES:
  */
 int bitXor(int x, int y)
 {
-  return 2;
+  return ~(~(x & ~y) & ~(y & ~x));
 }
 /* 
  * tmin - return minimum two's complement integer 
@@ -155,7 +155,8 @@ int bitXor(int x, int y)
  */
 int tmin(void)
 {
-  return 2;
+  // 即-2147483648的补码，1......0
+  return 1 << 31;
 }
 //2
 /*
@@ -167,7 +168,11 @@ int tmin(void)
  */
 int isTmax(int x)
 {
-  return 2;
+  // return !(x ^ (~(1 << 31)));
+  // 2147483647 + 1 = -2147483648
+  // 但是由于-1也符合这个条件
+  // 因此要把-1的情况排除掉
+  return !(((x + 1) ^ ~x)) & !!(x + 1);
 }
 /* 
  * allOddBits - return 1 if all odd-numbered bits in word set to 1
@@ -190,7 +195,8 @@ int allOddBits(int x)
  */
 int negate(int x)
 {
-  return 2;
+  // x + ~x = -1
+  return ~x + 1;
 }
 //3
 /* 
@@ -215,7 +221,7 @@ int isAsciiDigit(int x)
  */
 int conditional(int x, int y, int z)
 {
-  return 2;
+  return ((~!!x + 1) & y) + ((!!x + ~0) & z);
 }
 /* 
  * isLessOrEqual - if x <= y  then return 1, else return 0 
@@ -230,7 +236,7 @@ int isLessOrEqual(int x, int y)
 }
 //4
 /* 
- * logicalNeg - implement the ! operator, using all of 
+ * logicalNeg -  implement the ! operator, using all of 
  *              the legal operators except !
  *   Examples: logicalNeg(3) = 0, logicalNeg(0) = 1
  *   Legal ops: ~ & ^ | + << >>
