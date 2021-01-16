@@ -145,6 +145,8 @@ NOTES:
  */
 int bitXor(int x, int y)
 {
+  // x ^ y = (~x & y) | (~y & x)
+  // a | b = ~(~a & ~b)
   return ~(~(x & ~y) & ~(y & ~x));
 }
 /* 
@@ -155,7 +157,7 @@ int bitXor(int x, int y)
  */
 int tmin(void)
 {
-  // 即-2147483648的补码，1......0
+  // 即-2147483648的补码，100......0 (规定用-0来表示)
   return 1 << 31;
 }
 //2
@@ -184,7 +186,12 @@ int isTmax(int x)
  */
 int allOddBits(int x)
 {
-  return 2;
+  // 每八位判断
+  int x1 = (x >> 8);
+  int x2 = (x >> 16);
+  int x3 = (x >> 24);
+  // 如果这四个数相与后与上170还为170，则说明这四个数的奇数位都为1
+  return !((x & x1 & x2 & x3 & 170) ^ 170);
 }
 /* 
  * negate - return -x 
@@ -210,7 +217,9 @@ int negate(int x)
  */
 int isAsciiDigit(int x)
 {
-  return 2;
+  int condition1 = (x + ~48 + 1) >> 31 & 1;
+  int condition2 = (57 + ~x + 1) >> 31 & 1;
+  return !(condition1 | condition2);
 }
 /* 
  * conditional - same as x ? y : z 
@@ -221,6 +230,12 @@ int isAsciiDigit(int x)
  */
 int conditional(int x, int y, int z)
 {
+  // 设x的布尔值为a = !!x
+  // 则a1 & y + a2 & z满足：
+  // a = 1 -> a1 = -1, a2 = 0
+  // a = 0 -> a1 = 0, a2 = -1
+  // a1 = -a
+  // a2 = a - 1
   return ((~!!x + 1) & y) + ((!!x + ~0) & z);
 }
 /* 
@@ -232,7 +247,16 @@ int conditional(int x, int y, int z)
  */
 int isLessOrEqual(int x, int y)
 {
-  return 2;
+  // 取出两数的符号位
+  int sgnx = x >> 31 & 1;
+  int sgny = y >> 31 & 1;
+  // 是否同号 同号为0 异号为1
+  int isSameSign = sgnx ^ sgny;
+  int branch1 = !(sgnx ^ 1);
+  int branch2 = !((y + ~x + 1) >> 31 & 1);
+  // 运用conditional 如果为同号，则判断y-x的大小；如果为异号，则只有x为负数时满足条件
+  // （这里使用conditional是为了异号时不执行减法防止溢出
+  return ((~isSameSign + 1) & branch1) + ((isSameSign + ~0) & branch2);
 }
 //4
 /* 
@@ -241,13 +265,18 @@ int isLessOrEqual(int x, int y)
  *   Examples: logicalNeg(3) = 0, logicalNeg(0) = 1
  *   Legal ops: ~ & ^ | + << >>
  *   Max ops: 12
- *   Rating: 4 
+ *   Rating: 4
  */
 int logicalNeg(int x)
 {
-  return 2;
+  // 取出一个数和其相反数的符号
+  int isNegative = x >> 31 & 1;
+  int isPositive = (~x + 1) >> 31 & 1;
+  // 如果一个数和它的相反数同号，则这个数为0
+  return (isNegative | isPositive) ^ 1;
 }
-/* howManyBits - return the minimum number of bits required to represent x in
+/* 
+ * howManyBits - return the minimum number of bits required to represent x in
  *             two's complement
  *  Examples: howManyBits(12) = 5
  *            howManyBits(298) = 10
@@ -277,7 +306,30 @@ int howManyBits(int x)
  */
 unsigned floatScale2(unsigned uf)
 {
-  return 2;
+  int M = uf & 0x7fffff;
+  int E = uf >> 23 & 0xff;
+  int S = uf >> 31 & 1;
+  // 如果指数为255，则为无穷大或NaN 直接返回本身
+  if (E == 0xff)
+  {
+    return uf;
+  }
+  // 如果指数为0，则说明这是个极小数，此时尾数M为0.*****
+  else if (E == 0)
+  {
+    // M *= 2
+    M <<= 1;
+    if (M > 0x7fffff)
+    {
+      M &= 0x7fffff;
+      E++;
+    }
+  }
+  else
+  {
+    E++;
+  }
+  return (S << 31) + (E << 23) + M;
 }
 /* 
  * floatFloat2Int - Return bit-level equivalent of expression (int) f
@@ -293,7 +345,32 @@ unsigned floatScale2(unsigned uf)
  */
 int floatFloat2Int(unsigned uf)
 {
-  return 2;
+  int M = uf & 0x7fffff;
+  int E = uf >> 23 & 0xff;
+  int S = uf >> 31 & 1;
+  // E全为1 无穷大或NaN
+  if (E == 0xff)
+    return 0x80000000;
+  // E全为0
+  if (E == 0)
+    return 0;
+  E -= 127;
+  // 极小数 返回0
+  if (E < 0)
+    return 0;
+  // 如果溢出了
+  else if (E > 31)
+    return 0x80000000;
+  else
+  {
+    // 尾数前加上1
+    M = (1 << 23) + M;
+    if (E > 22)
+      M <<= E - 23;
+    if (E <= 22)
+      M >>= 23 - E;
+    return S ? -M : M;
+  }
 }
 /* 
  * floatPower2 - Return bit-level equivalent of the expression 2.0^x
@@ -310,5 +387,11 @@ int floatFloat2Int(unsigned uf)
  */
 unsigned floatPower2(int x)
 {
-  return 2;
+  int E = x + 127;
+  if (E >= 255)
+    return 0x7f800000;
+  else if (E <= 0)
+    return 0;
+  else
+    return (E << 23);
 }
