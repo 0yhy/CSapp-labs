@@ -1,0 +1,82 @@
+0x4010f4 <+0>: pushq  %r14
+0x4010f6 <+2>: pushq  %r13
+0x4010f8 <+4>: pushq  %r12
+0x4010fa <+6>: pushq  %rbp
+0x4010fb <+7>:  pushq  %rbx
+0x4010fc <+8>:  subq   $0x50, %rsp               ; 这是个栈
+0x401100 <+12>: movq   %rsp, %r13
+0x401103 <+15>: movq   %rsp, %rsi
+0x401106 <+18>: callq  0x40145c                  ; read_six_numbers
+0x40110b <+23>: movq   %rsp, %r14                ; %r14 = 参数存放地址
+0x40110e <+26>: movl   $0x0, %r12d               ; %r12d = 0
+0x401114 <+32>: movq   %r13, %rbp                ; %rbp = %r13 （当前比较的参数存放的地址）
+0x401117 <+35>: movl   (%r13), %eax              ; %eax = 存参数
+0x40111b <+39>: subl   $0x1, %eax                ; %eax -= 1
+0x40111e <+42>: cmpl   $0x5, %eax                ; 每个参数-1要比5小
+0x401121 <+45>: jbe    0x401128                  ; <+52>
+0x401123 <+47>: callq  0x40143a                  ; explode_bomb
+0x401128 <+52>: addl   $0x1, %r12d               ; %r12d += 1 记录次数(%r12d是外层循环次数)
+0x40112c <+56>: cmpl   $0x6, %r12d               ; 次数等于6次时跳到95
+0x401130 <+60>: je     0x401153                  ; <+95>
+0x401132 <+62>: movl   %r12d, %ebx               ; %ebx = %r12d 内层循环的初始次数赋值给%ebx
+0x401135 <+65>: movslq %ebx, %rax
+0x401138 <+68>: movl   (%rsp,%rax,4), %eax       ; %eax = 向后取一个参数
+0x40113b <+71>: cmpl   %eax, (%rbp)              ; 比较eax和当前比较的参数 相等就炸掉
+0x40113e <+74>: jne    0x401145                  ; <+81>
+0x401140 <+76>: callq  0x40143a                  ; explode_bomb
+0x401145 <+81>: addl   $0x1, %ebx                ; 次数+1
+0x401148 <+84>: cmpl   $0x5, %ebx                ; 比较次数和5的大小 <=5则跳转到65继续比较
+0x40114b <+87>: jle    0x401135                  ; <+65>
+0x40114d <+89>: addq   $0x4, %r13                ; 比较相应次后跳转到这里，当前比较参数往后挪一个
+0x401151 <+93>: jmp    0x401114 
+// 让每个数=7-自己
+0x401153 <+95>:  leaq   0x18(%rsp), %rsi         ; %rsi = %rsp + 24
+0x401158 <+100>: movq   %r14, %rax               ; %rax = %r14 参数头地址
+0x40115b <+103>: movl   $0x7, %ecx               ; %ecx = 7
+0x401160 <+108>: movl   %ecx, %edx               ; %edx = %ecx
+0x401162 <+110>: subl   (%rax), %edx             ; 依次让每个数=7-自己
+0x401164 <+112>: movl   %edx, (%rax)             ; (%rax) = %edx
+0x401166 <+114>: addq   $0x4, %rax               ; %rax += 4
+0x40116a <+118>: cmpq   %rsi, %rax               ; 
+0x40116d <+121>: jne    0x401160                 ; <+108>
+0x40116f <+123>: movl   $0x0, %esi
+0x401174 <+128>: jmp    0x401197                 ; <+163>
+0x401176 <+130>: movq   0x8(%rdx), %rdx          ; %rdx = %rdx->next
+0x40117a <+134>: addl   $0x1, %eax               ; %eax += 1 直到等于变换后的第一个数
+0x40117d <+137>: cmpl   %ecx, %eax               ; 比较%ecx和%eax
+0x40117f <+139>: jne    0x401176                 ; <+130> 不相等就继续让rdx = rdx->next eax+1 
+0x401181 <+141>: jmp    0x401188                 ; <+148> 相等跳到148
+0x401183 <+143>: movl   $0x6032d0, %edx          ; imm = 0x6032D0 
+0x401188 <+148>: movq   %rdx, 0x20(%rsp,%rsi,2)  ; 
+0x40118d <+153>: addq   $0x4, %rsi               ; %rsi += 4
+0x401191 <+157>: cmpq   $0x18, %rsi              ; 6次后跳到183
+0x401195 <+161>: je     0x4011ab                 ; <+183>
+0x401197 <+163>: movl   (%rsp,%rsi), %ecx        ; %ecx=(%rsp+%rsi) 当前是第几个参数 %rsp是变换后的数的头地址 %rsi是增量
+0x40119a <+166>: cmpl   $0x1, %ecx               ; 小于等于1则跳转143
+0x40119d <+169>: jle    0x401183                 ; <+143>
+0x40119f <+171>: movl   $0x1, %eax               ; %eax = 1
+0x4011a4 <+176>: movl   $0x6032d0, %edx          ; imm = 0x6032D0 %edx头指针！！！
+0x4011a9 <+181>: jmp    0x401176                 ; <+130>
+; 下面“链表”的排列顺序按照前面处理过的参数的顺序排
+0x4011ab <+183>: movq   0x20(%rsp), %rbx         ; rbx 链表[第一个数]的地址
+0x4011b0 <+188>: leaq   0x28(%rsp), %rax         ; rax 链表[第二个数]的地址的地址
+0x4011b5 <+193>: leaq   0x50(%rsp), %rsi         ; rsi 结束地址
+0x4011ba <+198>: movq   %rbx, %rcx               ; %rcx = %rbx 链表[当前数]的地址
+
+0x4011bd <+201>: movq   (%rax), %rdx             ; %rdx = (%rax) 链表[当前数的下一个数]的地址
+0x4011c0 <+204>: movq   %rdx, 0x8(%rcx)          ; 改变链表中的next
+0x4011c4 <+208>: addq   $0x8, %rax               ; %rax += 8 (次数+1)
+0x4011c8 <+212>: cmpq   %rsi, %rax
+0x4011cb <+215>: je     0x4011d2                 ; <+222>
+0x4011cd <+217>: movq   %rdx, %rcx               ; %rcx = %rdx
+0x4011d0 <+220>: jmp    0x4011bd                 ; <+201>
+0x4011d2 <+222>: movq   $0x0, 0x8(%rdx)          ; 链表尾的next设为0
+0x4011da <+230>: movl   $0x5, %ebp               ; %ebp = 5
+0x4011df <+235>: movq   0x8(%rbx), %rax
+0x4011e3 <+239>: movl   (%rax), %eax             ; 值
+0x4011e5 <+241>: cmpl   %eax, (%rbx)
+0x4011e7 <+243>: jge    0x4011ee                 ; <+250> 链表中的前一个数要比后面的大
+0x4011e9 <+245>: callq  0x40143a                 ; explode_bomb
+0x4011ee <+250>: movq   0x8(%rbx), %rbx
+0x4011f2 <+254>: subl   $0x1, %ebp
+0x4011f5 <+257>: jne    0x4011df                 ; <+235>

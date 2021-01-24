@@ -1,0 +1,45 @@
+0x40100c <+0>:  subq   $0x18, %rsp
+0x401010 <+4>:  leaq   0xc(%rsp), %rcx
+0x401015 <+9>:  leaq   0x8(%rsp), %rdx
+0x40101a <+14>: movl   $0x4025cf, %esi           ; imm = 0x4025CF 输入为2个整数
+0x40101f <+19>: movl   $0x0, %eax
+0x401024 <+24>: callq  0x400bf0                  ; symbol stub for: __isoc99_sscanf
+0x401029 <+29>: cmpl   $0x2, %eax                ; 比较参数个数和2 不等于就bomb
+0x40102c <+32>: jne    0x401035                  ; <+41>
+0x40102e <+34>: cmpl   $0xe, 0x8(%rsp)           ; 比较第一个参数和14 大于14就bomb
+0x401033 <+39>: jbe    0x40103a                  ; <+46>
+0x401035 <+41>: callq  0x40143a                  ; explode_bomb
+0x40103a <+46>: movl   $0xe, %edx                ; %edx = 14
+0x40103f <+51>: movl   $0x0, %esi                ; %esi = 0
+0x401044 <+56>: movl   0x8(%rsp), %edi           ; %edi = argument1
+0x401048 <+60>: callq  0x400fce                  ; func4
+0x40104d <+65>: testl  %eax, %eax
+0x40104f <+67>: jne    0x401058                  ; <+76>
+0x401051 <+69>: cmpl   $0x0, 0xc(%rsp)
+0x401056 <+74>: je     0x40105d                  ; <+81>
+0x401058 <+76>: callq  0x40143a                  ; explode_bomb
+0x40105d <+81>: addq   $0x18, %rsp
+0x401061 <+85>: retq 
+// func4
+0x400fce <+0>: subq   $0x8, %rsp                 ; %rsp -= 8 （入栈）
+0x400fd2 <+4>: movl   %edx, %eax                 ; %eax = %edx 14;14;10;
+0x400fd4 <+6>: subl   %esi, %eax                 ; %eax -= %esi 14-0;14-8;10-8=2;
+0x400fd6 <+8>: movl   %eax, %ecx                 ; %ecx = %eax
+0x400fd8 <+10>: shrl   $0x1f, %ecx               ; %ecx >>= 31 逻辑右移31位得到eax的符号位
+0x400fdb <+13>: addl   %ecx, %eax                ; %eax += %ecx 如果是负数 eax的值+1
+0x400fdd <+15>: sarl   %eax                      ; %eax >>= 1 14/2=7;6/2=3;2/2=1; 算术右移1位
+0x400fdf <+17>: leal   (%rax,%rsi), %ecx         ; %ecx = %rax + %rsi 7+0=7;3+8=11;1+8=9;
+0x400fe2 <+20>: cmpl   %edi, %ecx                ; if(%ecx <= argument1) jmp
+0x400fe4 <+22>: jle    0x400ff2                  ; <+36>
+0x400fe6 <+24>: leal   -0x1(%rcx), %edx          ; %edx = %rcx-1 11-1=10;10-1=9;9-1=8 改变edx的值
+0x400fe9 <+27>: callq  0x400fce                  ; <+0>
+0x400fee <+32>: addl   %eax, %eax
+0x400ff0 <+34>: jmp    0x401007                  ; <+57>
+0x400ff2 <+36>: movl   $0x0, %eax                ; %eax = 0
+0x400ff7 <+41>: cmpl   %edi, %ecx                ; if(%ecx >= argument1) return函数
+0x400ff9 <+43>: jge    0x401007                  ; <+57> 
+0x400ffb <+45>: leal   0x1(%rcx), %esi           ; %esi = %rcx + 1 8; 改变esi的值
+0x400ffe <+48>: callq  0x400fce                  ; <+0>
+0x401003 <+53>: leal   0x1(%rax,%rax), %eax
+0x401007 <+57>: addq   $0x8, %rsp
+0x40100b <+61>: retq

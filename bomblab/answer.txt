@@ -1,0 +1,11 @@
+Border relations with Canada have never been better.
+1 2 4 8 16 32
+2 707 / 3 256 / 4 389 / 5 206 / 6 682 / 7 327
+7 0 / 3 0 / 1 0 / 0 0
+
+Border relations with Canada have never been better.
+1 2 4 8 16 32
+2 707
+7 0
+9?>567
+2 3 4 5 6 1
